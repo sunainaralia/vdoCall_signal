@@ -22,4 +22,4 @@ RUN npm run build
 EXPOSE 8080
 
 # Define the command to start your Node.js application
-CMD ["node", "/build/index.js"]
+CMD ["node", "build/index.js"]
