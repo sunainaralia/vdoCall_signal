@@ -1,170 +1,98 @@
-import cors from "cors"
-import express from "express"
-import { createServer } from "http"
-import morgan from "morgan"
-import { Server } from "socket.io"
-import dotenv from 'dotenv'
+import cors from "cors";
+import express from "express";
+import { createServer } from "http";
+import morgan from "morgan";
+import { Server } from "socket.io";
+import dotenv from "dotenv";
 
+dotenv.config();
 
-// load environment variables
-dotenv.config()
+let users = [];
+let liveSessions = [];
 
+const app = express();
+const httpServer = createServer(app);
 
-// store this in redis or an appropriate db
-let users: string[] = []
-
-
-
-// create server
-const app = express()
-const httpServer = createServer(app)
-
-// create socket io server
 const io = new Server(httpServer, {
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
-    }
-})
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+});
 
+app.use(cors());
+app.use(morgan("combined"));
+app.use(express.json());
 
-app.use(cors())
-app.use(morgan('combined'))
-app.use(express.json())
+// Endpoint to view live sessions
+app.get("/live-sessions", (req, res) => {
+  res.json({ liveSessions });
+});
 
+// Middleware to authenticate users
+io.use((socket, next) => {
+  const { callerId } = socket.handshake.query;
+  if (callerId) {
+    socket.data.user = callerId;
+    next();
+  } else {
+    console.log("No caller ID found");
+    next(new Error("No caller ID found"));
+  }
+});
 
-app.get("/users", (req, res) => {
-    
-    res.json({
-        users,
-    })
-})
+// Handle socket connections
+io.on("connection", (socket) => {
+  const userId = socket.data.user;
+  console.log("User connected:", userId);
 
+  socket.join(userId);
 
+  // Notify user about existing live sessions
+  io.to(userId).emit("live-sessions", { liveSessions });
 
-// when user connects the first time,..
-// we can authenticate them using
-//          socket.handshake.auth
-//      we can add a token jwt in { token: "JWT" }
-//      and get it using 
-//          socket.handshake.auth.token
-// we check if valid then call next or
-// call next(error) with any error otherwise
-// in this case we just get users id, which we call callerId
-// no auth is done but this can be added later
-io.use((socket, next)=> {
-    if( socket.handshake.query?.callerId ) {
-        socket['user'] = socket.handshake.query?.callerId
-        next()
-    } else {
-        console.log("No token found")
-        next(new Error("No token found"))
-    }
-})
+  // Start a live session
+  socket.on("start-live", ({ sessionName }) => {
+    console.log(`${userId} started a live session: ${sessionName}`);
+    const session = { hostId: userId, sessionName };
+    liveSessions.push(session);
+    io.emit("new-live-session", session);
+  });
 
-// listen for socket connections & events
-io.on('connection', (socket)=> {
-    console.log("new connection on socker server user is ", socket['user'])
+  // Handle join live session
+  socket.on("join-live", ({ hostId }) => {
+    console.log(`${userId} is joining the live session hosted by ${hostId}`);
+    io.to(hostId).emit("incoming-viewer", { viewerId: userId });
+  });
 
-    socket.join(socket['user'])
+  // Handle offer from broadcaster to viewer
+  socket.on("offer", ({ to, offer }) => {
+    console.log(`Offer from ${userId} to ${to}`);
+    io.to(to).emit("offer", { from: userId, offer });
+  });
 
-    // notify this user of online users
-    io.to(socket['user']).emit("new-users", { users, })
-    
-    // notify existent users that a new user just joined
-    if( !users.includes(socket['user']) ) {
-        
-        users.map((user)=> {
-            
-            io.to(user).emit("new-user", { user: socket['user'], })
-        })
-        users.push(socket['user'])
-    }
+  // Handle answer from viewer to broadcaster
+  socket.on("answer", ({ to, answer }) => {
+    console.log(`Answer from ${userId} to ${to}`);
+    io.to(to).emit("answer", { from: userId, answer });
+  });
 
+  // Handle ICE candidates
+  socket.on("ice-candidate", ({ to, candidate }) => {
+    console.log(`ICE Candidate from ${userId} to ${to}`);
+    io.to(to).emit("ice-candidate", { from: userId, candidate });
+  });
 
+  // Handle disconnect
+  socket.on("disconnect", () => {
+    console.log(`User disconnected: ${userId}`);
+    liveSessions = liveSessions.filter((session) => session.hostId !== userId);
+    io.emit("live-session-ended", { hostId: userId });
+  });
+});
 
-    // when we get a call to start a call
-    socket.on('start-call', ({ to })=> {
-        console.log("initiating call request to ", to)
-
-        io.to(to).emit("incoming-call", { from: socket['user'] })
-    })
-
-    // when an incoming call is accepted
-    socket.on("accept-call", ({ to })=> {
-        console.log("call accepted by ", socket['user'], " from ", to)
-
-        io.to(to).emit("call-accepted", { to })
-    })
-    
-    // when an incoming call is denied
-    socket.on("deny-call", ({ to })=> {
-        console.log("call denied by ", socket['user'], " from ", to)
-
-        io.to(to).emit("call-denied", { to })
-    })
-    
-    // when a party leaves the call
-    socket.on("leave-call", ({ to })=> {
-        console.log("left call mesg by ", socket['user'], " from ", to)
-
-        io.to(to).emit("left-call", { to })
-    })
-
-    // when an incoming call is accepted,..
-    // caller sends their webrtc offer
-    socket.on("offer", ({ to, offer })=> {
-        console.log("offer from ", socket['user'], " to ", to)
-
-        io.to(to).emit("offer", { to, offer })
-    })
-
-    // when an offer is received,..
-    // receiver sends a webrtc offer-answer
-    socket.on("offer-answer", ({ to, answer })=> {
-        console.log("offer answer from ", socket['user'], " to ", to)
-
-        io.to(to).emit("offer-answer", { to, answer })
-    })
-    
-
-    // when an ice candidate is sent
-    socket.on("ice-candidate", ({ to, candidate })=> {
-        console.log("ice candidate from ", socket['user'], " to ", to)
-
-        io.to(to).emit("ice-candidate", { to, candidate })
-    })
-
-
-    // when a socker disconnects
-    socket.on("disconnect", (reason)=> {
-        users = users.filter((u)=> u != socket['user'])
-
-        users.map((user)=> {
-            
-            io.to(user).emit("user-left", { user: socket['user'], })
-        })
-        console.log("a socker disconnected ", socket['user'])
-    })
-
-})
-
-
-
-// create index route endpoint
-app.get('/', (_req, res) => {
-    res.json({
-        server: 'Signal #T90',
-        running: true,
-    })
-})
-
-
-// get server port
-const PORT = process.env.PORT || 8088
-
-// start server
-httpServer.listen(PORT, ()=> {
-    console.log(`listening on port ${PORT}`)
-})
-
+// Start server
+const PORT = process.env.PORT || 8088;
+httpServer.listen(PORT, () => {
+  console.log(`Listening on port ${PORT}`);
+});
