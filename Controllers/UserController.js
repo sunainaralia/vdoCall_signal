@@ -1,4 +1,4 @@
-const User = require("../models/UserModel.js"); // Import User model
+const User = require('../Models/UserModel.js'); // Import User model
 const CustomErrorHandler = require("../Utils/CustomErrorHandler.js"); // Custom error handler utility
 const asyncFunHandler = require("../Utils/asyncFunHandler.js"); // Async function handler to catch errors
 

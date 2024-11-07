@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { signUpUser, LoginUser } = require("../Controllers/UserController.js");
+const { signUpUser, LoginUser } = require("../Controllers/UserController.js").default;
 const userRouter = Router();
 
 userRouter.route('/')
@@ -8,5 +8,5 @@ userRouter.route('/')
 userRouter.route('/login/')
   .post(LoginUser);
 
-module.exports = { userRouter};
+module.exports = { userRouter };
 
