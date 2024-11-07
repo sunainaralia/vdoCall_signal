@@ -193,7 +193,7 @@ io.on("connection", (socket) => {
 });
 
 // Start the server on the configured port
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 10000;
 httpServer.listen(PORT, () => {
   console.log(`Listening on port ${PORT}`);
 });
