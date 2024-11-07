@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { signUpUser, LoginUser } = require("../Controllers/UserController.js").default;
+const { signUpUser, LoginUser } = require("../Controllers/UserController.js");
 const userRouter = Router();
 
 userRouter.route('/')
