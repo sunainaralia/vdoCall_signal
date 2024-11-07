@@ -34,6 +34,7 @@ userSchema.pre('save', async function (next) {
     return next();
   }
   this.password = await bcryptjs.hash(this.password, 12)
+  console.log(this.password)
   next();
 });
 // method to compare the password

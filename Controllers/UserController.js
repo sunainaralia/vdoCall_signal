@@ -20,8 +20,9 @@ const LoginUser = asyncFunHandler(async (req, res, next) => {
     let err = new CustomErrorHandler("Email or password is not provided", 400);
     return next(err); 
   }
-  const user = await Client.findOne({ email })
+  const user = await User.findOne({ email })
   if (!user || !(await user.comparePasswordInDb(password, user.password))) {
+    console.log(user.password)
     let err = new CustomErrorHandler("email or password is not correct", 400)
     return next(err);
   }
