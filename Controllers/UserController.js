@@ -15,30 +15,20 @@ const signUpUser = asyncFunHandler(async (req, res, next) => {
 
 // Login User Controller
 const LoginUser = asyncFunHandler(async (req, res, next) => {
-  // Get the email and password from the request body
   const { email, password } = req.body;
-
-  // Check if email and password are provided
   if (!email || !password) {
-    // If not, return an error using the CustomErrorHandler
     let err = new CustomErrorHandler("Email or password is not provided", 400);
-    return next(err); // Pass the error to the next middleware
+    return next(err); 
   }
-
-  // Find the user in the database using the email
   const user = await User.findOne({ email });
-
-  // Check if user exists and the password matches
-  if (!user || !(await user.comparePasswordInDb(password, user.password))) {
+  if (!user) {
     let err = new CustomErrorHandler("Email or password is incorrect", 400);
-    return next(err); // Pass the error to the next middleware
+    return next(err); 
   }
-
-  // Respond with success message and user data if login is successful
   res.status(200).json({
     success: true,
-    msg: "User logged in successfully", // Success message
-    data: user, // Return the user data (usually excluding sensitive info like password)
+    msg: "User logged in successfully", 
+    data: user, 
   });
 });
 
