@@ -104,7 +104,8 @@ import { Server } from "socket.io";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import app from "../app.js";
-
+import cors from "cors";
+import morgan from "morgan";
 // Load environment variables
 dotenv.config({ path: "./config.env" });
 
@@ -132,7 +133,13 @@ const io = new Server(httpServer, {
 // In-memory session data
 let users = [];
 let liveSessions = [];
-
+app.use(cors());
+app.use(morgan("combined"));
+// Endpoint to view live sessions
+app.get("/live-sessions", (req, res) => {
+  console.log("Live Session Working");
+  res.json({ liveSessions });
+});
 // Middleware for authenticating Socket.IO users
 io.use((socket, next) => {
   const { callerId } = socket.handshake.query;

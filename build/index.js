@@ -90,6 +90,8 @@ const socket_io_1 = require("socket.io");
 const dotenv_1 = __importDefault(require("dotenv"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const app_js_1 = __importDefault(require("../app.js"));
+const cors_1 = __importDefault(require("cors"));
+const morgan_1 = __importDefault(require("morgan"));
 // Load environment variables
 dotenv_1.default.config({ path: "./config.env" });
 // MongoDB connection
@@ -113,6 +115,13 @@ const io = new socket_io_1.Server(httpServer, {
 // In-memory session data
 let users = [];
 let liveSessions = [];
+app_js_1.default.use((0, cors_1.default)());
+app_js_1.default.use((0, morgan_1.default)("combined"));
+// Endpoint to view live sessions
+app_js_1.default.get("/live-sessions", (req, res) => {
+    console.log("Live Session Working");
+    res.json({ liveSessions });
+});
 // Middleware for authenticating Socket.IO users
 io.use((socket, next) => {
     const { callerId } = socket.handshake.query;
