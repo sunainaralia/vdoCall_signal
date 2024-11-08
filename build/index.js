@@ -167,11 +167,9 @@ io.on("connection", (socket) => {
     });
     // end video call
     socket.on("end-vdo", () => {
-        console.log(liveSessions);
         liveSessions = liveSessions.filter((session) => session.hostId !== userId);
-        console.log(liveSessions);
         console.log("vdo call ended by ", userId);
-        io.to(userId).emit("live-sessions", { liveSessions });
+        // io.to(userId).emit("live-sessions", { liveSessions });
         io.emit("live-session-ended", { hostId: userId });
     });
     // Handle disconnection and update live sessions
