@@ -192,7 +192,9 @@ io.on("connection", (socket) => {
   });
   // end video call
   socket.on("end-vdo", () => {
+    console.log(liveSessions)
     liveSessions = liveSessions.filter((session) => session.hostId !== userId);
+    console.log(liveSessions)
     console.log("vdo call ended by ", userId);
     io.emit("live-session-ended", { hostId: userId });
   });
