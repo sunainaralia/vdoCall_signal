@@ -165,6 +165,11 @@ io.on("connection", (socket) => {
         console.log(`ICE Candidate from ${userId} to ${to}`);
         io.to(to).emit("ice-candidate", { from: userId, candidate });
     });
+    // end video call
+    socket.on("end-vdo", () => {
+        liveSessions = liveSessions.filter((session) => session.hostId !== userId);
+        io.emit("live-session-ended", { hostId: userId });
+    });
     // Handle disconnection and update live sessions
     socket.on("disconnect", () => {
         console.log(`User disconnected: ${userId}`);
