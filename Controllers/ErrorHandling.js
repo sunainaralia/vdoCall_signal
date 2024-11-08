@@ -1,7 +1,7 @@
 const developmentError = (error, res) => {
   return res.status(error.errorStatus).json({
     status: error.errorStatus,
-    msg: error.message,
+    message: error.message,
     stackTrace: error.stack,
     error: error
   });

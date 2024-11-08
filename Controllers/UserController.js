@@ -8,8 +8,8 @@ const signUpUser = asyncFunHandler(async (req, res, next) => {
   let user = await User.create(req.body);
   return res.status(201).json({
     success: true,
-    msg: "User is created successfully", // Success message
-    data: user, // Return the user data
+    message: "User is created successfully", // Success message
+    data: user, 
   });
 });
 
@@ -22,13 +22,12 @@ const LoginUser = asyncFunHandler(async (req, res, next) => {
   }
   const user = await User.findOne({ email })
   if (!user || !(await user.comparePasswordInDb(password, user.password))) {
-    console.log(user.password)
     let err = new CustomErrorHandler("email or password is not correct", 400)
     return next(err);
   }
   res.status(200).json({
     success: true,
-    msg: "User logged in successfully", 
+    message: "User logged in successfully", 
     data: user, 
   });
 });
